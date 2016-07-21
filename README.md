@@ -9,7 +9,7 @@ IP addresses are used to get Kenna Asset ID
 Asset ID is used to set asset to inactive. 
 
 
-qualys_to_Kenna_direct.rb <Kenna API token> <qualys user> <qualys pass> <qualys tagname> 
+qualys_to_Kenna_direct.rb "Kenna API token" "qualys user" "qualys pass" "qualys tagname" 
 
 Tested on:
 ruby 2.0.0p648 (2015-12-16 revision 53162) [universal.x86_64-darwin15]
