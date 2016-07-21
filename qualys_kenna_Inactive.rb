@@ -1,8 +1,6 @@
 # kenna-asset-tagger
 require 'rest-client'
 require 'json'
-require 'csv'
-require 'ipaddr'
 require 'nokogiri'
 
 @token = ARGV[0]
@@ -21,17 +19,20 @@ query_response = RestClient::Request.execute(
   )
 @doc = Nokogiri::XML (query_response)
 
-puts @doc.to_s
-
+#puts @doc.to_s
+@ipcount = @doc.xpath(".//HOST/IP").size
+puts "#{@ipcount}"
+iploop = 1
 @doc.xpath(".//HOST/IP").each do |node|
 
   ipaddr = node.content
-  puts "found one #{ipaddr}"
+  puts "found #{ipaddr} item #{iploop} of #{@ipcount}"
 
   @asset_api_url = 'https://api.kennasecurity.com/assets'
-  @query_url = "#{@asset_api_url}?primary_locator=#{ipaddr}"
+  @query_url = "#{@asset_api_url}/search?inactive=false&q=ip:#{ipaddr}&inactive=false"
   @headers = {'content-type' => 'application/json', 'X-Risk-Token' => @token, 'accept' => 'application/json'}
 
+#puts @query_url
 
   query_response = RestClient::Request.execute(
     method: :get,
@@ -39,13 +40,20 @@ puts @doc.to_s
     headers: @headers
   )
 
-  query_response_json = JSON.parse(query_response.body)["assets"]
-    #p query_response_json.size
-    query_response_json.each do |item|
-      assetid  = item["id"]
+  meta_response_json = JSON.parse(query_response.body)["meta"]
+  tot_assets = meta_response_json.fetch("total_count")
 
-        post_url = "#{@asset_api_url }/#{assetid}"
-        p post_url
+  if tot_assets > 0 then
+
+    query_response_json = JSON.parse(query_response.body)["assets"]
+    #p query_response_json.to_s
+   
+    assetid = query_response_json[0].fetch("id")
+
+
+
+        post_url = "#{@asset_api_url}/#{assetid}"
+        #p post_url
 
       json_data = {
         'asset' => {
@@ -63,7 +71,11 @@ puts @doc.to_s
       rescue RestClient::UnprocessableEntity 
 
       end
-    end    
+    puts "item updated in Kenna"
+  else
+    puts "item already inactive in Kenna"
+  end   
+  iploop += 1
 end
 
 
